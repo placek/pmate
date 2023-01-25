@@ -47,10 +47,10 @@ Probably you have it already.
 In order to use `pmate` in your setup, you need to:
 
 1.  Ensure that you have the following tools installed for the image:
-  a. openssh
-  b. busybox
-  c. getent
-  d. tmux
+  *. openssh
+  *. busybox
+  *. getent
+  *. tmux
 
 2. Add a `pmate.sh` script to your image at `$PATH`, like:
 
@@ -85,7 +85,7 @@ ADD bin/pmate.sh /usr/local/bin/pmate
 
 #### Using docker compose
 
-When using `docker-compose` you can avoid some changes in `Dockerfile` and introduce them in docker compose cnfiguration.
+When using `docker-compose` you can avoid some changes in `Dockerfile` and introduce them in docker compose configuration.
 
 For instance setting up an entrypoint can be done by providing custom `volume` and `entrypoint` options, like:
 
@@ -106,16 +106,17 @@ services:
 
 #### Create a new branch in repo
 
-Before we start session we need to set up the repository.
+Before you start session, set up the repository:
 
     $ cd <project_path>
     $ git checkout -B pair/with_placek
 
-This point is optional, but it will keep the main branches clean and every change made during the session will be able to revert, add seperately or manages someway different at will.
+###### NOTE:
+This point is optional, but it will keep the main branches clean and every change made during the session managable at will.
 
 #### Set up authorized keys
 
-`pmate` looks up the SSH keys of pair programming developers in a file called `.authorized_keys` in the root of the project. The format of that file is a [simplified format of standard `authorized_keys`](https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server) file used by SSH daemon. It consists of public SSH keys - one line per key. the file does not support additional parameters like `command`.
+`pmate` looks up the SSH keys of pair programming developers in a file called `.authorized_keys` in the root of the project. The format of that file is a [simplified format of standard `authorized_keys` file](https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server) used by SSH daemon. It consists of public SSH keys - one line per key. The file does not support additional parameters like `command`.
 
 Remember to add your key to the `.authorized_keys` file.
 
@@ -131,7 +132,7 @@ $ <path_to_pmate.sh> start <your_projects_docker_image_with_pmate_entrypoint>
 
 `pmate` script sets up the container name, volumes, necessary environment variables and ports.
 
-The container name is in format `pmate-<name_of_projects_root_directory>` and can be futher manipulated with docker commanrds.
+The container name is in format `pmate-<name_of_projects_root_directory>` and can be futher manipulated with docker commands.
 
 #### Attach to the container
 
@@ -151,11 +152,11 @@ After connecting to the container, SSH deamon attaches you to the `tmux` session
 
 Escaping from `tmux` session ends the `ssh` session.
 
-###### Note (using external tunneling)
+###### NOTE (using external tunneling)
 
 If you are not able to use the VPN you can tunnel the SSH session via [ngrok](https://ngrok.com).
 
-###### Note (known hosts problem)
+###### NOTE (known hosts problem)
 
 Since docker containers based on the `pmate` will have different host key on each execution (generated with `ssh-keygen` in the entrypoint) there can appear the problem with caching those keys on every client machine.
 
@@ -167,6 +168,12 @@ Alternatively you can launch `ssh` in "non-checking-known-host mode", using:
 
 ```
 $ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p <port> pair@<your_ip>
+```
+
+In the end it's recommended to use `pmate`'s `connect` command:
+
+```
+$ <path_to_pmate.sh> connect <your_ip>
 ```
 
 #### Stoping session
