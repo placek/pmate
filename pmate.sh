@@ -1,11 +1,17 @@
 #!/bin/sh
 
+# name of the script
 self=$(basename "${0}")
+# path to script's execution directory
 working_directory="$(pwd)"
+# target docker container name
 pair_container_name="pmate-$(basename "${working_directory}")"
-pair_image_name=${2:-"silquenarmo/pmate:latest"}
+# group_id and user_id of user starting session
 group_id=$(id -g)
 user_id=$(id -u)
+# allowed .authorized_keys format
+ssh_pubkey_regexp="^ssh-rsa [0-9A-Za-z+\/=]\+ [0-9a-zA-Z:\-_]\+$"
+# exposed port of docker container
 port=2222
 
 case $1 in
@@ -79,7 +85,7 @@ EOF
     # set .ssh/authorized_keys
     echo "${PAIR_USER}:$(date +%s)" | chpasswd 2> /dev/null
     mkdir -p ${PAIR_USER_HOME}/.ssh
-    cat ${PAIR_WORKSPACE}/authorized_keys | while read key; do
+    cat ${PAIR_WORKSPACE}/authorized_keys | grep -e "${ssh_pubkey_regexp}" | while read key; do
       echo "command=\"$(which tmux) attach -t ${PAIR_SESSION_NAME}\" ${key}" >> /home/${PAIR_USER}/.ssh/authorized_keys
     done
     chown -R ${USER_ID}:${GROUP_ID} ${PAIR_USER_HOME}/.ssh
@@ -93,33 +99,63 @@ EOF
     exec /usr/sbin/sshd -p ${port} -Def /etc/ssh/sshd_config
     ;;
 
-  sta*)
-    docker run \
-      --detach \
-      --name ${pair_container_name} \
-      --publish ${port}:${port} \
-      --env GROUP_ID=${group_id} \
-      --env USER_ID=${user_id} \
-      -v ${working_directory}:/workspace/project \
-      -v ${working_directory}/.authorized_keys:/workspace/authorized_keys \
-      ${pair_image_name} > /dev/null && \
-    echo "${self}: session in ${working_directory} started."
+  start)
+    if [ ! "$(docker ps -a -q -f name=${pair_container_name})" ]; then
+      pair_image_name=${2:-"silquenarmo/pmate:latest"}
+      docker run \
+        --detach \
+        --name ${pair_container_name} \
+        --publish ${port}:${port} \
+        --env GROUP_ID=${group_id} \
+        --env USER_ID=${user_id} \
+        -v ${working_directory}:/workspace/project \
+        -v ${working_directory}/.authorized_keys:/workspace/authorized_keys \
+        ${pair_image_name} > /dev/null && \
+      echo "${self}: new session in ${working_directory} started."
+    else
+      echo "${self}: WARN: session already in progress."
+      exit 1
+    fi
     ;;
 
-  sto*)
-    docker rm -fv ${pair_container_name} > /dev/null && \
-    echo "${self}: session in ${working_directory} stopped."
+  status)
+    if [ "$(docker ps -a -q -f name=${pair_container_name})" ]; then
+      echo "${self}: running."
+    else
+      echo "${self}: stopped."
+    fi
     ;;
 
-  con*)
-    ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p ${port} pair@${2}
+  stop)
+    if [ "$(docker ps -a -q -f name=${pair_container_name})" ]; then
+      docker rm -fv ${pair_container_name} > /dev/null && \
+      echo "${self}: session in ${working_directory} stopped."
+    else
+      echo "${self}: WARN: no session to stop."
+      exit 1
+    fi
+    ;;
+
+  connect)
+    host=${2:-localhost}
+    if [ ! "$(docker ps -a -q -f name=${pair_container_name})" ] && [ "${host}" == "localhost" ]; then
+      echo "${self}: WARN: no session to connect to. Run '${self} start'."
+      exit 1
+    fi
+    ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p ${port} pair@${host}
     ;;
 
   *)
-    echo "${self}: unknown command"
+    echo "${self}: unknown command '${1}'"
     echo
-    echo "${self} start - starts a pair-programming session"
-    echo "${self} stop  - stops a pair-programming session"
+    echo "${self} status"
+    echo -e "\tStatus of the session."
+    echo "${self} start"
+    echo -e "\tStarts a pair-programming session."
+    echo "${self} stop"
+    echo -e "\tStops a pair-programming session."
+    echo "${self} connect [host]"
+    echo -e "\tConnects to the pair-programming session running on host. By default connects to localhost."
     exit 1
     ;;
 esac
