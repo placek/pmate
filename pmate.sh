@@ -139,18 +139,18 @@ EOF
         --mount "type=bind,source=${working_directory},target=${PMATE_WORKSPACE}/project" \
         --mount "type=bind,source=${working_directory}/.authorized_keys,target=${PMATE_WORKSPACE}/keys" \
         "${pmate_image_name}" > /dev/null && \
-      echo "${self}: new session in ${working_directory} started."
+      echo "New session in ${working_directory} started."
     else
-      echo "${self}: session already in progress."
+      echo "Session already in progress."
       exit 1
     fi
     ;;
 
   status)
     if [ "$(docker ps -a -q -f name="${pmate_container_name}")" ]; then
-      echo "${self}: running."
+      echo "Running."
     else
-      echo "${self}: stopped."
+      echo "Stopped."
       exit 1
     fi
     ;;
@@ -158,9 +158,9 @@ EOF
   stop)
     if [ "$(docker ps -a -q -f name="${pmate_container_name}")" ]; then
       docker rm -fv "${pmate_container_name}" > /dev/null && \
-      echo "${self}: session in ${working_directory} stopped."
+      echo "Session in ${working_directory} stopped."
     else
-      echo "${self}: no session to stop."
+      echo "No session to stop."
       exit 1
     fi
     ;;
@@ -168,23 +168,24 @@ EOF
   connect)
     host=${2:-localhost}
     if [ ! "$(docker ps -a -q -f name="${pmate_container_name}")" ] && [ "${host}" = "localhost" ]; then
-      echo "${self}: no session to connect to. Run '${self} start'."
+      echo "No session to connect to. Run '${self} start'."
       exit 1
     fi
     ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p ${PMATE_PORT} "${PMATE_USER}@${host}"
     ;;
 
   *)
-    echo "${self}: unknown command '${1}'"
+    echo "unknown command '${1}'"
     echo
-    echo "${self} status"
-    echo "    Status of the session."
-    echo "${self} start"
-    echo "    Starts a pair-programming session."
-    echo "${self} stop"
-    echo "    Stops a pair-programming session."
-    echo "${self} connect [host]"
-    echo "    Connects to the pair-programming session running on host. By default connects to localhost."
+    echo "Usage: ${self} COMMAND"
+    echo "  status"
+    echo "      Status of the session."
+    echo "  start"
+    echo "      Starts a pair-programming session."
+    echo "  stop"
+    echo "      Stops a pair-programming session."
+    echo "   connect [HOST]"
+    echo "      Connects to the pair-programming session running on HOST. By default connects to localhost."
     exit 1
     ;;
 esac
