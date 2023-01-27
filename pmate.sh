@@ -167,11 +167,12 @@ EOF
 
   connect)
     host=${2:-localhost}
+    port=${3:-"${PMATE_PORT}"}
     if [ ! "$(docker ps -a -q -f name="${pmate_container_name}")" ] && [ "${host}" = "localhost" ]; then
       echo "No session to connect to. Run '${self} start'."
       exit 1
     fi
-    ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p ${PMATE_PORT} "${PMATE_USER}@${host}"
+    ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p ${port} "${PMATE_USER}@${host}"
     ;;
 
   *)
@@ -180,12 +181,12 @@ EOF
     echo "Usage: ${self} COMMAND"
     echo "  status"
     echo "      Status of the session."
-    echo "  start"
-    echo "      Starts a pair-programming session."
+    echo "  start [IMAGE]"
+    echo "      Starts a pair-programming session. It uses '${pmate_image_name}' by default."
     echo "  stop"
     echo "      Stops a pair-programming session."
-    echo "   connect [HOST]"
-    echo "      Connects to the pair-programming session running on HOST. By default connects to localhost."
+    echo "   connect [HOST] [PORT]"
+    echo "      Connects to the pair-programming session running on HOST and PORT. By default connects to localhost and port ${PMATE_PORT}."
     exit 1
     ;;
 esac

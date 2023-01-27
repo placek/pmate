@@ -38,24 +38,24 @@ To access the sandbox we will use an _sshd_ service inside the container. To fol
 
 #### Install docker
 
-To install docker simply follow instructions on [docker site](https://docs.docker.com/get-docker/).
-
 Probably you have it already.
+
+If not, to install docker simply follow instructions on [docker site](https://docs.docker.com/get-docker/).
 
 #### Adjust the docker image of your project
 
 In order to use `pmate` in your setup, you need to:
 
 1.  Ensure that you have the following tools installed for the image:
-  *. openssh
-  *. busybox
-  *. getent
-  *. tmux
+  * openssh
+  * busybox
+  * getent
+  * tmux
 
 2. Add a `pmate.sh` script to your image at `$PATH`, like:
 
 ```docker
-ADD <path_to_pmate.sh> /usr/local/bin/pmate
+ADD https://raw.githubusercontent.com/placek/pmate/master/pmate.sh /usr/local/bin/pmate
 ```
 
 3. Set entrypoint to pmate:
@@ -64,7 +64,7 @@ ADD <path_to_pmate.sh> /usr/local/bin/pmate
 ENTRYPOINT /usr/local/bin/pmate
 ```
 
-4. Tell docker to expose the ssh entry port:
+4. Tell docker to expose the ssh entry port (optional, [documentation purpose only](https://stackoverflow.com/questions/22111060/what-is-the-difference-between-expose-and-publish-in-docker#:~:text=Short%20answer%3A,to%20a%20running%20container%20port)):
 
 ```docker
 EXPOSE 2222
@@ -80,26 +80,7 @@ RUN apk add --update --no-cache openssh tmux
 EXPOSE 2222
 ENTRYPOINT /usr/local/bin/pmate entrypoint
 
-ADD bin/pmate.sh /usr/local/bin/pmate
-```
-
-#### Using docker compose
-
-When using `docker-compose` you can avoid some changes in `Dockerfile` and introduce them in docker compose configuration.
-
-For instance setting up an entrypoint can be done by providing custom `volume` and `entrypoint` options, like:
-
-```yaml
-...
-services:
-  my-awesome-project:
-    volumes:
-      - ./bin/pmate.sh:/usr/local/bin/pmate
-      ...
-    entrypoint: pmate
-    ports:
-      - 2222:2222
-...
+ADD https://raw.githubusercontent.com/placek/pmate/master/pmate.sh /usr/local/bin/pmate
 ```
 
 ### Pair programming session
@@ -116,7 +97,9 @@ This point is optional, but it will keep the main branches clean and every chang
 
 #### Set up authorized keys
 
-`pmate` looks up the SSH keys of pair programming developers in a file called `.authorized_keys` in the root of the project. The format of that file is a [simplified format of standard `authorized_keys` file](https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server) used by SSH daemon. It consists of public SSH keys - one line per key. The file does not support additional parameters like `command`.
+`pmate` looks up the SSH keys of pair programming developers in a file called `.authorized_keys` in the root of the project.
+
+The format of that file is a [simplified format](https://github.com/placek/pmate/blob/master/pmate.sh#L15) of [standard `authorized_keys` file](https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server) used by SSH daemon. It consists of public SSH keys - one line per key. The file does not support additional parameters like `command`.
 
 Remember to add your key to the `.authorized_keys` file.
 
@@ -124,37 +107,39 @@ It's a good practice to add `.authorized_keys` line to `.gitignore`.
 
 #### Start a session
 
-To start a session, simply run the `pmate` script with `start` parameter in the root of the project directory, like:
+To start a session, simply run the `pmate` script with `start` command in the root of the project directory, like:
 
 ```
-$ <path_to_pmate.sh> start <your_projects_docker_image_with_pmate_entrypoint>
+$ <path_to_pmate.sh> start [IMAGE]
 ```
 
-`pmate` script sets up the container name, volumes, necessary environment variables and ports.
+where `IMAGE` is an image that you prepared in the "building image" section. When `IMAGE` is not provided then `pmate` looks up for `silquenarmo/pmate:latest` image.
 
-The container name is in format `pmate-<name_of_projects_root_directory>` and can be futher manipulated with docker commands.
+`pmate` script sets up the container name, volumes, necessary environment variables and ports as well as other necessary parameters.
+
+The container name is in format `pmate-<name_of_projects_root_directory>`, so the container can be futher manipulated with docker commands under this name.
 
 #### Attach to the container
 
-Now you can use the `pair` user on the container. To attach to the container simply use `ssh`:
+To run a session simpoly type:
 
 ```
-$ ssh -p 2222 pair@localhost
+$ <path_to_pmate.sh> connect [HOST]
 ```
 
-The pair-programming partner should be able to connect to the container with:
+It is equivalent to:
 
 ```
-$ ssh -p <port> pair@<your_ip>
+$ ssh -p 2222 pmate@HOST
 ```
+
+The `HOST` parameter in `pmate connect` is optional - by default it connects to localhost.
 
 After connecting to the container, SSH deamon attaches you to the `tmux` session called `pmate`. In the result you can follow every move of your partner (and they can too).
 
-Escaping from `tmux` session ends the `ssh` session.
-
 ###### NOTE (using external tunneling)
 
-If you are not able to use the VPN you can tunnel the SSH session via [ngrok](https://ngrok.com).
+If you are not able to use the public IP of your mate then go for the VPN solution or you can tunnel the SSH session via [ngrok](https://ngrok.com).
 
 ###### NOTE (known hosts problem)
 
@@ -170,11 +155,7 @@ Alternatively you can launch `ssh` in "non-checking-known-host mode", using:
 $ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p <port> pair@<your_ip>
 ```
 
-In the end it's recommended to use `pmate`'s `connect` command:
-
-```
-$ <path_to_pmate.sh> connect <your_ip>
-```
+In the end it's recommended to use `pmate`'s `connect` command which does the above for you.
 
 #### Stoping session
 
