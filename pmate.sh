@@ -51,12 +51,12 @@ case $1 in
     # ensure group and user_id
     deluser guest 2> /dev/null # FIXME! nasty hack
 
-    if [ ! -z "$(getent passwd "${USER_ID}")" ]; then
+    if [ -n "$(getent passwd "${USER_ID}")" ]; then
       user="$(getent passwd "${USER_ID}" | cut -d: -f1)"
       deluser --remove-home "${user}" 2> /dev/null
     fi
 
-    if [ ! -z "$(getent group "${GROUP_ID}")" ]; then
+    if [ -n "$(getent group "${GROUP_ID}")" ]; then
       group="$(getent group "${GROUP_ID}" | cut -d: -f1)"
       delgroup "${group}" 2> /dev/null
     fi
@@ -92,7 +92,7 @@ EOF
     fi
 
     # list of mates
-    PMATE_MATES="$(cat "${PMATE_WORKSPACE}/keys" | cut -d ' ' -f 3 | tr "\n" "," | sed "s/,$//")"
+    PMATE_MATES="$(cut -d ' ' -f 3 "${PMATE_WORKSPACE}/keys" | tr "\n" "," | sed "s/,$//")"
 
     # set up the tmux configuration
     cat <<EOF > /etc/tmux.conf
@@ -112,7 +112,6 @@ EOF
 
     # set .ssh/authorized_keys
     grep -e "${ssh_pubkey_regexp}" "${PMATE_WORKSPACE}/keys" | while read -r key; do
-      echo $key
       echo "command=\"$(which tmux) attach -t ${PMATE_SESSION_NAME}\" ${key}" >> "${PMATE_USER_HOME}/.ssh/authorized_keys"
     done
     chown -R "${USER_ID}":"${GROUP_ID}" "${PMATE_USER_HOME}/.ssh"
@@ -137,8 +136,8 @@ EOF
         --publish ${PMATE_PORT}:${PMATE_PORT} \
         --env GROUP_ID="${group_id}" \
         --env USER_ID="${user_id}" \
-        --mount type=bind,source="${working_directory}",target="${PMATE_WORKSPACE}/project" \
-        --mount type=bind,source="${working_directory}/.authorized_keys",target="${PMATE_WORKSPACE}/keys" \
+        --mount "type=bind,source=${working_directory},target=${PMATE_WORKSPACE}/project" \
+        --mount "type=bind,source=${working_directory}/.authorized_keys,target=${PMATE_WORKSPACE}/keys" \
         "${pmate_image_name}" > /dev/null && \
       echo "${self}: new session in ${working_directory} started."
     else
