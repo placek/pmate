@@ -124,13 +124,13 @@ The container name is in format `pmate-<name_of_projects_root_directory>`, so th
 To run a session simpoly type:
 
 ```
-$ <path_to_pmate.sh> connect [HOST]
+$ <path_to_pmate.sh> connect [HOST] [PORT]
 ```
 
 It is equivalent to:
 
 ```
-$ ssh -p 2222 pmate@HOST
+$ ssh -p PORT pmate@HOST
 ```
 
 The `HOST` parameter in `pmate connect` is optional - by default it connects to localhost.
@@ -152,7 +152,7 @@ After the pair programming session will be launched on docker container every cl
 Alternatively you can launch `ssh` in "non-checking-known-host mode", using:
 
 ```
-$ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p <port> pair@<your_ip>
+$ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p PORT pmate@HOST
 ```
 
 In the end it's recommended to use `pmate`'s `connect` command which does the above for you.
