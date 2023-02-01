@@ -38,6 +38,29 @@ Scan through our [existing issues](https://github.com/github/docs/issues) to fin
   - [Fork the repo](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo#fork-an-example-repository) so that you can make your changes without affecting the original project until you're ready to merge them.
 
 2. Create a working branch and start with your changes!
+3. Install [Nix](https://nixos.org/download.html).
+4. Enter Nix shell:
+
+```
+$ nix-shell
+```
+or if you use [direnv](https://direnv.net/), permit to use the project configuration:
+
+```
+direnv allow .
+```
+
+5. Run a test check before commiting:
+
+```
+$ shellcheck pmate.sh
+```
+
+or
+
+```
+$ make test
+```
 
 ### Commit your update
 
@@ -46,7 +69,7 @@ Commit the changes once you are happy with them. Don't forget to do a self-revie
 ### Pull Request
 
 When you're finished with the changes, create a pull request, also known as a PR.
-- Fill the "Ready for review" template so that we can review your PR. This template helps reviewers understand your changes as well as the purpose of your pull request. 
+- Fill the "Ready for review" template so that we can review your PR. This template helps reviewers understand your changes as well as the purpose of your pull request.
 - Don't forget to [link PR to issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue) if you are solving one.
 - Enable the checkbox to [allow maintainer edits](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/allowing-changes-to-a-pull-request-branch-created-from-a-fork) so the branch can be updated for a merge.
 Once you submit your PR, a Docs team member will review your proposal. We may ask questions or request additional information.
@@ -56,6 +79,6 @@ Once you submit your PR, a Docs team member will review your proposal. We may as
 
 ### Your PR is merged!
 
-Congratulations :tada::tada: The pmate team thanks you :sparkles:. 
+Congratulations :tada::tada: The pmate team thanks you :sparkles:.
 
 Now that you are part of the pmate community.

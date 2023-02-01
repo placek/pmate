@@ -172,3 +172,7 @@ After that the pair-programming partner has no access to the code.
 1. [`tmux` cheat-sheet](https://tmuxcheatsheet.com/)
 2. [`ngrok` usage](https://ngrok.com/docs/getting-started)
 3. _old article_ [Remote Pair Programming Made Easy with SSH and tmux](http://hamvocke.com/blog/remote-pair-programming-with-tmux/)
+
+### Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md)

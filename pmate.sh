@@ -50,12 +50,12 @@ case $1 in
 
     # ensure group and user_id
     deluser guest 2> /dev/null # FIXME! nasty hack
-
+    # shellcheck disable=SC2153
     if [ -n "$(getent passwd "${USER_ID}")" ]; then
       user="$(getent passwd "${USER_ID}" | cut -d: -f1)"
       deluser --remove-home "${user}" 2> /dev/null
     fi
-
+    # shellcheck disable=SC2153
     if [ -n "$(getent group "${GROUP_ID}")" ]; then
       group="$(getent group "${GROUP_ID}" | cut -d: -f1)"
       delgroup "${group}" 2> /dev/null
@@ -172,7 +172,7 @@ EOF
       echo "No session to connect to. Run '${self} start'."
       exit 1
     fi
-    ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p ${port} "${PMATE_USER}@${host}"
+    ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p "${port}" "${PMATE_USER}@${host}"
     ;;
 
   *)
