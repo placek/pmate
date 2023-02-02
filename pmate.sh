@@ -115,6 +115,7 @@ pmate_start_ssh_daemon() {
   ssh-keygen -A > /dev/null
   pmate_check_sshd
   pmate_set_ssh_daemon_configuration
+  mkdir -p -m 0755 /var/run/sshd
   exec /usr/sbin/sshd -p ${PMATE_PORT} -Def /etc/ssh/sshd_config
 }
 
