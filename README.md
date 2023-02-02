@@ -49,7 +49,6 @@ In order to use `pmate` in your setup, you need to:
 1.  Ensure that you have the following tools installed for the image:
   * openssh
   * busybox
-  * getent
   * tmux
 
 2. Add a `pmate.sh` script to your image at `$PATH`, like:
