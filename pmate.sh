@@ -73,6 +73,7 @@ pmate_set_authorized_keys() {
 
 pmate_set_tmux_configuration() {
   cat <<EOF > /etc/tmux.conf
+set  -g default-terminal "tmux-256color"
 set  -g mouse on
 set  -g display-time 2000
 set  -g history-limit 10000
