@@ -8,8 +8,8 @@ project_name="$(basename "${working_directory}")"
 # target docker container name
 pmate_container_name="pmate-${project_name}"
 
-export PMATE_PORT=2222
-export PMATE_WORKSPACE="/pmate"
+export PMATE_PORT="${PMATE_PORT:-2222}"
+export PMATE_WORKSPACE="${PMATE_WORKSPACE:-"/pmate"}"
 export PMATE_SESSION_NAME="pmate"
 export PMATE_USER="pmate"
 export PMATE_GROUP="mates"
@@ -62,7 +62,7 @@ pmate_ensure_user() {
   echo "${PMATE_USER}:x:${USER_ID}:${GROUP_ID}:Pair programming manager:${PMATE_WORKSPACE}:/bin/sh" >> /etc/passwd
   echo "${PMATE_USER}:$(date +%s)" | chpasswd 2> /dev/null
   mkdir -p "${PMATE_WORKSPACE}"
-  chown -R "${USER_ID}":"${GROUP_ID}" ${PMATE_WORKSPACE}
+  chown -R "${USER_ID}":"${GROUP_ID}" "${PMATE_WORKSPACE}"
 }
 
 pmate_set_authorized_keys() {
@@ -125,7 +125,7 @@ pmate_start_ssh_daemon() {
   pmate_set_ssh_daemon_configuration
   mkdir -p /var/run/sshd
   chmod 0755 /var/run/sshd
-  exec /usr/sbin/sshd -p ${PMATE_PORT} -Def /etc/ssh/sshd_config
+  exec /usr/sbin/sshd -p "${PMATE_PORT}" -Def /etc/ssh/sshd_config
 }
 
 pmate_start() {
@@ -137,7 +137,7 @@ pmate_start() {
       --rm \
       --hostname "${project_name}" \
       --name "${2}" \
-      --publish ${PMATE_PORT}:${PMATE_PORT} \
+      --publish "${PMATE_PORT}:${PMATE_PORT}" \
       --env GROUP_ID="${group_id}" \
       --env USER_ID="${user_id}" \
       --mount "type=bind,source=${working_directory},target=${PMATE_WORKSPACE}/project" \
