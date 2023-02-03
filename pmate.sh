@@ -47,6 +47,13 @@ pmate_check_keys() {
   fi
 }
 
+pmate_check_for_running_session() {
+  if [ ! "$(docker ps -a -q -f name="${2}")" ] && [ "${1}" = "localhost" ]; then
+    >&2 echo "No session to connect to."
+    exit 1
+  fi
+}
+
 pmate_ensure_user() {
   sed -i "/^[a-zA-Z0-9_\-]\+:x:${GROUP_ID}:/d" /etc/group
   sed -i "/^[a-zA-Z0-9_\-]\+:x:[0-9]\+:${GROUP_ID}:/d" /etc/passwd
@@ -116,19 +123,20 @@ pmate_start_ssh_daemon() {
   ssh-keygen -A > /dev/null
   pmate_check_sshd
   pmate_set_ssh_daemon_configuration
-  mkdir -p -m 0755 /var/run/sshd
+  mkdir -p /var/run/sshd
+  chmod 0755 /var/run/sshd
   exec /usr/sbin/sshd -p ${PMATE_PORT} -Def /etc/ssh/sshd_config
 }
 
-pmate_start_session_from_image() {
-  if [ ! "$(docker ps -a -q -f name="${pmate_container_name}")" ]; then
+pmate_start() {
+  if [ ! "$(docker ps -a -q -f name="${2}")" ]; then
     group_id=$(id -g)
     user_id=$(id -u)
     docker run \
       --detach \
       --rm \
       --hostname "${project_name}" \
-      --name "${pmate_container_name}" \
+      --name "${2}" \
       --publish ${PMATE_PORT}:${PMATE_PORT} \
       --env GROUP_ID="${group_id}" \
       --env USER_ID="${user_id}" \
@@ -140,6 +148,29 @@ pmate_start_session_from_image() {
     >&2 echo "Session already in progress."
     exit 1
   fi
+}
+
+pmate_status() {
+  if [ "$(docker ps -a -q -f name="${1}")" ]; then
+    echo "Running."
+  else
+    echo "Stopped."
+    exit 1
+  fi
+}
+
+pmate_stop() {
+  if [ "$(docker ps -a -q -f name="${1}")" ]; then
+    docker rm -fv "${1}" > /dev/null && \
+    echo "Session in ${working_directory} stopped."
+  else
+    >&2 echo "No session to stop."
+    exit 1
+  fi
+}
+
+pmate_connect() {
+  ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p "${2}" "${PMATE_USER}@${1}"
 }
 
 pmate_help() {
@@ -167,36 +198,22 @@ case $1 in
 
   start)
     pmate_image_name=${2:-"silquenarmo/pmate:latest"}
-    pmate_start_session_from_image "$pmate_image_name"
+    pmate_start "${pmate_image_name}" "${pmate_container_name}"
     ;;
 
   status)
-    if [ "$(docker ps -a -q -f name="${pmate_container_name}")" ]; then
-      echo "Running."
-    else
-      echo "Stopped."
-      exit 1
-    fi
+    pmate_status "${pmate_container_name}"
     ;;
 
   stop)
-    if [ "$(docker ps -a -q -f name="${pmate_container_name}")" ]; then
-      docker rm -fv "${pmate_container_name}" > /dev/null && \
-      echo "Session in ${working_directory} stopped."
-    else
-      >&2 echo "No session to stop."
-      exit 1
-    fi
+    pmate_stop "${pmate_container_name}"
     ;;
 
   connect)
     host=${2:-localhost}
     port=${3:-"${PMATE_PORT}"}
-    if [ ! "$(docker ps -a -q -f name="${pmate_container_name}")" ] && [ "${host}" = "localhost" ]; then
-      >&2 echo "No session to connect to."
-      exit 1
-    fi
-    ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p "${port}" "${PMATE_USER}@${host}"
+    pmate_check_for_running_session "${host}" "${pmate_container_name}"
+    pmate_connect "${host}" "${port}"
     ;;
 
   *)
