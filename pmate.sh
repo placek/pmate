@@ -63,13 +63,6 @@ pmate_check_keys() {
   fi
 }
 
-pmate_check_for_running_session() {
-  if [ ! "$(docker ps -a -q -f name="${2}")" ] && [ "${1}" = "localhost" ]; then
-    >&2 echo "No session to connect to."
-    exit 1
-  fi
-}
-
 pmate_ensure_user() {
   pmate_check_user_id
   pmate_check_group_id
@@ -188,7 +181,7 @@ pmate_stop() {
 }
 
 pmate_connect() {
-  ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p "${2}" "${PMATE_USER}@${1}"
+  TERM=xterm-256color ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p "${2}" "${PMATE_USER}@${1}"
 }
 
 pmate_help() {
@@ -230,7 +223,6 @@ case $1 in
   connect)
     host=${2:-localhost}
     port=${3:-"${PMATE_PORT}"}
-    pmate_check_for_running_session "${host}" "${pmate_container_name}"
     pmate_connect "${host}" "${port}"
     ;;
 
