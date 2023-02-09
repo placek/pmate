@@ -1,2 +1,2 @@
 test:
-	shellcheck pmate.sh
+	shellcheck --shell=sh pmate

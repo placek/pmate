@@ -1,13 +1,6 @@
 #!/bin/sh
 # shellcheck disable=SC2153
 
-# path to script's execution directory
-working_directory="$(pwd)"
-# the name of the project
-project_name="$(basename "${working_directory}")"
-# target docker container name
-pmate_container_name="pmate-${project_name}"
-
 export PMATE_PORT="${PMATE_PORT:-2222}"
 export PMATE_WORKSPACE="${PMATE_WORKSPACE:-"/pmate"}"
 export PMATE_SESSION_NAME="pmate"
@@ -55,6 +48,14 @@ pmate_check_tmux() {
   fi
 }
 
+pmate_check_bash() {
+  if ! command -v bash > /dev/null
+  then
+    >&2 echo "ERROR: bash could not be found"
+    exit 1
+  fi
+}
+
 pmate_check_keys() {
   if [ ! -f "${PMATE_WORKSPACE}/keys" ]
   then
@@ -66,11 +67,12 @@ pmate_check_keys() {
 pmate_ensure_user() {
   pmate_check_user_id
   pmate_check_group_id
+  pmate_check_bash
   sed -i "/^[a-zA-Z0-9_\-]\+:x:${GROUP_ID}:/d" /etc/group
   sed -i "/^[a-zA-Z0-9_\-]\+:x:[0-9]\+:${GROUP_ID}:/d" /etc/passwd
   sed -i "/^[a-zA-Z0-9_\-]\+:x:${USER_ID}:/d" /etc/passwd
   echo "${PMATE_GROUP}:x:${GROUP_ID}:" >> /etc/group
-  echo "${PMATE_USER}:x:${USER_ID}:${GROUP_ID}:Pair programming manager:${PMATE_WORKSPACE}:/bin/sh" >> /etc/passwd
+  echo "${PMATE_USER}:x:${USER_ID}:${GROUP_ID}:Pair programming manager:${PMATE_WORKSPACE}:/bin/bash" >> /etc/passwd
   echo "${PMATE_USER}:$(date +%s)" | chpasswd 2> /dev/null
   mkdir -p "${PMATE_WORKSPACE}"
   chown -R "${USER_ID}":"${GROUP_ID}" "${PMATE_WORKSPACE}"
@@ -139,47 +141,6 @@ pmate_start_ssh_daemon() {
   exec /usr/sbin/sshd -p "${PMATE_PORT}" -Def /etc/ssh/sshd_config
 }
 
-pmate_start() {
-  if [ ! "$(docker ps -a -q -f name="${2}")" ]; then
-    group_id=$(id -g)
-    user_id=$(id -u)
-    docker run \
-      --detach \
-      --rm \
-      --hostname "${project_name}" \
-      --name "${2}" \
-      --publish "${PMATE_PORT}:${PMATE_PORT}" \
-      --env GROUP_ID="${group_id}" \
-      --env USER_ID="${user_id}" \
-      --mount "type=bind,source=${working_directory},target=${PMATE_WORKSPACE}/project" \
-      --mount "type=bind,source=${working_directory}/.authorized_keys,target=${PMATE_WORKSPACE}/keys" \
-      "${1}" > /dev/null && \
-    echo "New session in ${working_directory} started."
-  else
-    >&2 echo "Session already in progress."
-    exit 1
-  fi
-}
-
-pmate_status() {
-  if [ "$(docker ps -a -q -f name="${1}")" ]; then
-    echo "Running."
-  else
-    echo "Stopped."
-    exit 1
-  fi
-}
-
-pmate_stop() {
-  if [ "$(docker ps -a -q -f name="${1}")" ]; then
-    docker rm -fv "${1}" > /dev/null && \
-    echo "Session in ${working_directory} stopped."
-  else
-    >&2 echo "No session to stop."
-    exit 1
-  fi
-}
-
 pmate_connect() {
   TERM=xterm-256color ssh -o "UserKnownHostsFile=/dev/null" -o "StrictHostKeyChecking=no" -p "${2}" "${PMATE_USER}@${1}"
 }
@@ -188,39 +149,22 @@ pmate_help() {
   >&2 echo "unknown command '${1}'"
   >&2 echo
   >&2 echo "Usage: $(basename "${0}") COMMAND"
-  >&2 echo "  status"
-  >&2 echo "      Status of the session."
-  >&2 echo "  start [IMAGE]"
-  >&2 echo "      Starts a pair-programming session."
-  >&2 echo "  stop"
-  >&2 echo "      Stops a pair-programming session."
+  >&2 echo "  entrypoint"
+  >&2 echo "      Docker entrypoint.  DO NOT USE IN LOCAL CONSOLE!"
   >&2 echo "   connect [HOST] [PORT]"
   >&2 echo "      Connects to the pair-programming session running on HOST and PORT."
   exit 1
 }
 
 case $1 in
-  e*)
+  entrypoint)
     pmate_ensure_user
     pmate_set_authorized_keys
     pmate_start_tmux_session
     pmate_start_ssh_daemon
     ;;
 
-  start)
-    pmate_image_name=${2:-"silquenarmo/pmate:latest"}
-    pmate_start "${pmate_image_name}" "${pmate_container_name}"
-    ;;
-
-  status)
-    pmate_status "${pmate_container_name}"
-    ;;
-
-  stop)
-    pmate_stop "${pmate_container_name}"
-    ;;
-
-  connect)
+  c*)
     host=${2:-localhost}
     port=${3:-"${PMATE_PORT}"}
     pmate_connect "${host}" "${port}"
