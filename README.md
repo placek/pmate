@@ -72,7 +72,7 @@ To start working on pair-programming session with `pmate` do the following:
 Each participant of pair-programming session has to be authorized.  The
 authorisation is possible using the SSH public key of the participant.
 
-The format of that file is a [simplified format](https://github.com/placek/pmate/blob/master/pmate#L15)
+The format of that file is a [simplified format](https://github.com/placek/pmate/blob/master/pmate#L84)
 of [standard `authorized_keys` file](https://www.digitalocean.com/community/tutorials/how-to-configure-ssh-key-based-authentication-on-a-linux-server)
 used by SSH daemon.  It consists of public SSH keys - one line per key.  The
 file does not support additional parameters like `command`.
@@ -114,7 +114,8 @@ An example `Dockerfile.pmate` file:
 ```docker
 FROM alpine # FIXME: provide a base image of your choice: use here the name of the project image
 
-RUN apk add --update --no-cache openssh tmux # FIXME: use the OS specific package system to install openssh-server, tmux and bash
+RUN apk add --update --no-cache openssh tmux # FIXME: use the OS specific package system
+                                             # add here the packages you need (git, vim, etc.)
 
 EXPOSE 2222
 ENTRYPOINT /usr/local/bin/pmate entrypoint
