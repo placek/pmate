@@ -3,6 +3,8 @@
 This project is a sketch for universal pair-programming tool for dockerized
 projects.
 
+![image](https://user-images.githubusercontent.com/161099/217799226-c6cf03c7-0949-4bfb-b4a0-85c60f3d94ab.png)
+
 ### Etymology
 
 `pmate` stands for:
