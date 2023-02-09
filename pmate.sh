@@ -15,6 +15,22 @@ export PMATE_USER="pmate"
 export PMATE_GROUP="mates"
 export PMATE_MATES
 
+pmate_check_user_id() {
+  if [ -z "${USER_ID}" ]
+  then
+    >&2 echo "ERROR: USER_ID not set"
+    exit 1
+  fi
+}
+
+pmate_check_group_id() {
+  if [ -z "${GROUP_ID}" ]
+  then
+    >&2 echo "ERROR: GROUP_ID not set"
+    exit 1
+  fi
+}
+
 pmate_check_ssh_keygen() {
   if ! command -v ssh-keygen > /dev/null
   then
@@ -55,6 +71,8 @@ pmate_check_for_running_session() {
 }
 
 pmate_ensure_user() {
+  pmate_check_user_id
+  pmate_check_group_id
   sed -i "/^[a-zA-Z0-9_\-]\+:x:${GROUP_ID}:/d" /etc/group
   sed -i "/^[a-zA-Z0-9_\-]\+:x:[0-9]\+:${GROUP_ID}:/d" /etc/passwd
   sed -i "/^[a-zA-Z0-9_\-]\+:x:${USER_ID}:/d" /etc/passwd
